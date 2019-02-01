@@ -1,3 +1,7 @@
+library(rpart)
+library(ggplot2)
+library(rpart.plot)
+library(plyr)
 Biomeclimate <- readRDS(file='data/RadBiomeclimate.RDS')
 Biomeclimate <- Biomeclimate[Biomeclimate$Norm == 1990,]
 Biomeclimate$a01 <- 0
@@ -28,7 +32,8 @@ Biomeclimate$MAAT <- apply(Biomeclimate[,which(colnames(Biomeclimate)=='t01'):wh
 
 Biomeclimate$Deficit <- pmax(Biomeclimate$PET - Biomeclimate$AET, 0)
 Biomeclimate$Surplus <- pmax(Biomeclimate$MAP - Biomeclimate$AET, 0)
-Biomeclimate$PPETRatio <- (Biomeclimate$MAP/Biomeclimate$PET +0.0001)
+Biomeclimate$M <- (Biomeclimate$MAP/Biomeclimate$PET +0.0001)
+Cindex <- pmin(Biomeclimate$Tc,Biomeclimate$Tclx+15)
 
 Biomeclimate$Seasonalilty <- ifelse(Biomeclimate$Deficit < 150 & Biomeclimate$PPETRatio>=1, "Isopluvial",
                        ifelse(Biomeclimate$Surplus < 25 & Biomeclimate$PPETRatio < 0.5 & Biomeclimate$pAET < 75, "Isoxeric",
@@ -63,9 +68,9 @@ Biomeclimate$BioTemperatureW <- ifelse(Biomeclimate$Tg >= 24,"Hot (Lowland)",
                                         ifelse(Biomeclimate$Tg >= 12,"Cool-Mild (Upper-Montane)",
                                                ifelse(Biomeclimate$Tg >= 6,"Cool (Subalpine)","Cold (Alpine)"
                                                )))))
-Biomeclimate$T10 <- 0
+Biomeclimate$TM10 <- 0
 for (i in 0:11){
-  Biomeclimate$T10  <- Biomeclimate$T10 + (Biomeclimate[,which(colnames(Biomeclimate)=='t01')+i] >= 10)
+  Biomeclimate$TM10  <- Biomeclimate$TM10 + (Biomeclimate[,which(colnames(Biomeclimate)=='t01')+i] >= 10)
 }
 
 Biomeclimate$SunPPT <- ifelse(Biomeclimate$Latitude>=0,(apply(Biomeclimate[,which(colnames(Biomeclimate)=='p04'):which(colnames(Biomeclimate)=='p09')], MARGIN = 1, FUN='sum')+0.0001)/(Biomeclimate$MAP+0.0001),1- (apply(Biomeclimate[,which(colnames(Biomeclimate)=='p04'):which(colnames(Biomeclimate)=='p09')], MARGIN = 1, FUN='sum')+0.0001)/(Biomeclimate$MAP+0.0001))
@@ -91,7 +96,64 @@ Biomeclimate$Pww <- ifelse(Biomeclimate$Latitude < 0,
 
 Biomeclimate$Koeppen <- as.character('unk')
 
-Biomeclimate$Koeppen <- ifelse(Biomeclimate$MAP < (10 * Biomeclimate$DryThresh),'B',
-                               ifelse(Biomeclimate$Tc >= 18, 'A',
-                                      ifelse(Biomeclimate$Tw < 10, 'E',
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Tw < 10, 'E',
+                               ifelse(Biomeclimate$MAP < (10 * Biomeclimate$DryThresh),'B',
+                                      ifelse(Biomeclimate$Tc >= 18, 'A',
                                              ifelse(Biomeclimate$Tc < 0, 'D', 'C'))))
+
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'A',
+                               ifelse(Biomeclimate$Pd >= 60, 'Af',
+                                      ifelse(Biomeclimate$MAP >=  25*(100*Biomeclimate$Pd),'Am',
+                                             ifelse(Biomeclimate$Pdw <60,'Aw','As'))),Biomeclimate$Koeppen )
+                                                    
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'B',
+                               ifelse(Biomeclimate$MAP <= 5*Biomeclimate$DryThresh,
+                                      ifelse(Biomeclimate$MAAT >= 18,'BWh','BWk'),
+                                      ifelse(Biomeclimate$MAAT >= 18,'BSh','BSk')),Biomeclimate$Koeppen)
+
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'C',
+                               ifelse(Biomeclimate$Pds < Biomeclimate$Pdw &
+                                        Biomeclimate$Pww > 3*Biomeclimate$Pds & Biomeclimate$Pds < 40, 'Cs',
+                                      ifelse(Biomeclimate$Pww < Biomeclimate$Pds &
+                                               Biomeclimate$Pws > 10*Biomeclimate$Pdw, 'Cw', 'Cf')),
+                               Biomeclimate$Koeppen)
+
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'D',
+                               ifelse(Biomeclimate$Pds < Biomeclimate$Pdw &
+                                        Biomeclimate$Pww > 3*Biomeclimate$Pds & Biomeclimate$Pds < 40, 'Ds',
+                                      ifelse(Biomeclimate$Pww < Biomeclimate$Pds &
+                                               Biomeclimate$Pws > 10*Biomeclimate$Pdw, 'Dw', 'Df')),
+                               Biomeclimate$Koeppen)
+
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'E',
+                               ifelse(Biomeclimate$Tw > 0, 'ET','EF'),
+                               Biomeclimate$Koeppen)
+
+Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% c('Cf','Cw','Cs','Df','Dw','Ds'),
+                               ifelse(Biomeclimate$Tc < -38 & Biomeclimate$TM10 < 4,paste0(Biomeclimate$Koeppen,'d'),
+                                      ifelse(Biomeclimate$TM10 < 4, paste0(Biomeclimate$Koeppen,'c'),
+                                             ifelse(Biomeclimate$Tw < 22, paste0(Biomeclimate$Koeppen,'b'),paste0(Biomeclimate$Koeppen,'a')))),
+                                                    Biomeclimate$Koeppen)
+
+
+
+#Classification Tree
+
+selectBiome <- Biomeclimate[,]
+
+selectBiomecount<-aggregate(selectBiome[,c("Koeppen")], by=list(selectBiome$Koeppen),FUN=length)
+colnames(selectBiomecount)<-c("Koeppen","x")
+selectBiomecount$wt <- 100/(selectBiomecount$x+100)
+#selectBiome <- subset(selectBiome, select = -c(wt) )
+selectBiome<-merge(selectBiome,selectBiomecount, by="Koeppen")
+colnames(selectBiome)
+
+biomeclass <- rpart(Koeppen ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 6, cp=0.0005, minsplit=1000))
+# Make plot
+
+png(filename="biomeclass.png",width = 10, height = 3, units = 'in', res = 600)
+
+rpart.plot(biomeclass, extra=108) # Make plot
+
+dev.off()
+
