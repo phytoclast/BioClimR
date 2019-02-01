@@ -33,21 +33,21 @@ Biomeclimate$MAAT <- apply(Biomeclimate[,which(colnames(Biomeclimate)=='t01'):wh
 Biomeclimate$Deficit <- pmax(Biomeclimate$PET - Biomeclimate$AET, 0)
 Biomeclimate$Surplus <- pmax(Biomeclimate$MAP - Biomeclimate$AET, 0)
 Biomeclimate$M <- (Biomeclimate$MAP/Biomeclimate$PET +0.0001)
-Cindex <- pmin(Biomeclimate$Tc,Biomeclimate$Tclx+15)
+Biomeclimate$Cindex <- pmin(Biomeclimate$Tc,Biomeclimate$Tclx+15)
 
-Biomeclimate$Seasonalilty <- ifelse(Biomeclimate$Deficit < 150 & Biomeclimate$PPETRatio>=1, "Isopluvial",
-                       ifelse(Biomeclimate$Surplus < 25 & Biomeclimate$PPETRatio < 0.5 & Biomeclimate$pAET < 75, "Isoxeric",
+Biomeclimate$Seasonalilty <- ifelse(Biomeclimate$Deficit < 150 & Biomeclimate$M>=1, "Isopluvial",
+                       ifelse(Biomeclimate$Surplus < 25 & Biomeclimate$M < 0.5 & Biomeclimate$pAET < 75, "Isoxeric",
                               ifelse(Biomeclimate$pAET < 75,"Xerothermic","Pluviothermic")))
 
 
 
-Biomeclimate$MRegime <- ifelse(Biomeclimate$PPETRatio>=2,"Perhumid",
-                  ifelse(Biomeclimate$PPETRatio>=1.414,"Moist-Humid",
-                         ifelse(Biomeclimate$PPETRatio>=1,"Dry-Humid",
-                                ifelse(Biomeclimate$PPETRatio>=0.707,"Moist-Subhumid",
-                                       ifelse(Biomeclimate$PPETRatio>=0.5,"Dry-Subhumid",
-                                              ifelse(Biomeclimate$PPETRatio>=0.25,"Semiarid",
-                                                     ifelse(Biomeclimate$PPETRatio>=0.125,"Arid","Perarid"
+Biomeclimate$MRegime <- ifelse(Biomeclimate$M>=2,"Perhumid",
+                  ifelse(Biomeclimate$M>=1.414,"Moist-Humid",
+                         ifelse(Biomeclimate$M>=1,"Dry-Humid",
+                                ifelse(Biomeclimate$M>=0.707,"Moist-Subhumid",
+                                       ifelse(Biomeclimate$M>=0.5,"Dry-Subhumid",
+                                              ifelse(Biomeclimate$M>=0.25,"Semiarid",
+                                                     ifelse(Biomeclimate$M>=0.125,"Arid","Perarid"
                                                      )))))))
 
 
@@ -99,11 +99,11 @@ Biomeclimate$Koeppen <- as.character('unk')
 Biomeclimate$Koeppen <- ifelse(Biomeclimate$Tw < 10, 'E',
                                ifelse(Biomeclimate$MAP < (10 * Biomeclimate$DryThresh),'B',
                                       ifelse(Biomeclimate$Tc >= 18, 'A',
-                                             ifelse(Biomeclimate$Tc < 0, 'D', 'C'))))
+                                             ifelse(Biomeclimate$Tc < -3, 'D', 'C'))))
 
 Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'A',
                                ifelse(Biomeclimate$Pd >= 60, 'Af',
-                                      ifelse(Biomeclimate$MAP >=  25*(100*Biomeclimate$Pd),'Am',
+                                      ifelse(Biomeclimate$MAP >=  25*(100-Biomeclimate$Pd),'Am',
                                              ifelse(Biomeclimate$Pdw <60,'Aw','As'))),Biomeclimate$Koeppen )
                                                     
 Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% 'B',
@@ -136,19 +136,38 @@ Biomeclimate$Koeppen <- ifelse(Biomeclimate$Koeppen %in% c('Cf','Cw','Cs','Df','
                                                     Biomeclimate$Koeppen)
 
 
+summaryKoeppen <- ddply(Biomeclimate,"Koeppen", summarise,Tg = median(Tg),  Cindex = median(Cindex), Tc = median(Tc), Tcl = median(Tcl), Tclx = median(Tclx), M=median(M), Deficit=median(Deficit), Surplus=median(Surplus), pAET=median(pAET))
 
 #Classification Tree
 
-selectBiome <- Biomeclimate[,]
-
+selectBiome <- subset(Biomeclimate, !Koeppen %in% c('As', 'Cwa', 'Cwb', 'Cwc', 'Dwa', 'Dwb', 'Dwc'))
 selectBiomecount<-aggregate(selectBiome[,c("Koeppen")], by=list(selectBiome$Koeppen),FUN=length)
 colnames(selectBiomecount)<-c("Koeppen","x")
-selectBiomecount$wt <- 100/(selectBiomecount$x+100)
+selectBiomecount$wt <- 1/(selectBiomecount$x+1)
 #selectBiome <- subset(selectBiome, select = -c(wt) )
 selectBiome<-merge(selectBiome,selectBiomecount, by="Koeppen")
 colnames(selectBiome)
 
-biomeclass <- rpart(Koeppen ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 6, cp=0.0005, minsplit=1000))
+biomeclass <- rpart(Koeppen ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 7, cp=0.0005, minsplit=1000))
+# Make plot
+
+png(filename="biomeclass.png",width = 10, height = 3, units = 'in', res = 600)
+
+rpart.plot(biomeclass, extra=108) # Make plot
+
+dev.off()
+
+#Classification Tree
+
+selectBiome <- subset(Biomeclimate, !BIOME %in% c("9","14"))
+selectBiomecount<-aggregate(selectBiome[,c("biomname")], by=list(selectBiome$BIOME,selectBiome$biomname),FUN=length)
+colnames(selectBiomecount)<-c("BIOME","biomname","x")
+selectBiomecount$wt <- 100/(selectBiomecount$x+100)
+#selectBiome <- subset(selectBiome, select = -c(wt) )
+selectBiome<-merge(selectBiome,selectBiomecount, by=c("BIOME","biomname"))
+colnames(selectBiome)
+
+biomeclass <- rpart(biomname ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 5, cp=0.0005, minsplit=1000))
 # Make plot
 
 png(filename="biomeclass.png",width = 10, height = 3, units = 'in', res = 600)
