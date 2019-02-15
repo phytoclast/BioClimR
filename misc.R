@@ -160,6 +160,18 @@ dev.off()
 #Classification Tree
 
 selectBiome <- subset(Biomeclimate, !BIOME %in% c("9","14"))
+selectBiome <- subset(Biomeclimate, (BIOME %in% c('1') & Koeppen %in% c('Af', 'Am'))|
+                        (BIOME %in% c('4') & Koeppen %in% c('Cfa', 'Dfa', 'Cfb', 'Dfb', 'Dwa', 'Dwb', 'Cwa', 'Cwb'))|
+                        (BIOME %in% c('12') & Koeppen %in% c('Csa', 'Csb'))|
+                        (BIOME %in% c('13') & Koeppen %in% c('BWh', 'BWk'))|
+                        (BIOME %in% c('8') & Koeppen %in% c( 'BSk'))|
+                        (BIOME %in% c('7') & Koeppen %in% c( 'BSh'))|
+                        (BIOME %in% c('2') & Koeppen %in% c( 'Aw'))|
+                        (BIOME %in% c('6') & Koeppen %in% c( 'Dfc'))|
+                        (BIOME %in% c('11') & Koeppen %in% c( 'ET'))|
+                        (BIOME %in% c('99') & Koeppen %in% c( 'EF'))
+)
+
 selectBiomecount<-aggregate(selectBiome[,c("biomname")], by=list(selectBiome$BIOME,selectBiome$biomname),FUN=length)
 colnames(selectBiomecount)<-c("BIOME","biomname","x")
 selectBiomecount$wt <- 100/(selectBiomecount$x+100)
@@ -167,7 +179,27 @@ selectBiomecount$wt <- 100/(selectBiomecount$x+100)
 selectBiome<-merge(selectBiome,selectBiomecount, by=c("BIOME","biomname"))
 colnames(selectBiome)
 
-biomeclass <- rpart(biomname ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 5, cp=0.0005, minsplit=1000))
+biomeclass <- rpart(biomname ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 4, cp=0.0005, minsplit=100))
+# Make plot
+
+png(filename="biomeclass.png",width = 10, height = 3, units = 'in', res = 600)
+
+rpart.plot(biomeclass, extra=108) # Make plot
+
+dev.off()
+
+#Classification Tree
+
+selectBiome <- Biomeclimate
+selectBiome$synclm <- paste(selectBiome$BioTemperatureC, selectBiome$BioTemperatureW, selectBiome$MRegime, selectBiome$Seasonalilty)
+selectBiomecount<-aggregate(selectBiome[,c("synclm")], by=list(selectBiome$synclm),FUN=length)
+colnames(selectBiomecount)<-c("synclm","x")
+selectBiomecount$wt <- 1000/(selectBiomecount$x+1000)
+#selectBiome <- subset(selectBiome, select = -c(wt) )
+selectBiome<-merge(selectBiome,selectBiomecount, by=c("synclm"))
+colnames(selectBiome)
+
+biomeclass <- rpart(synclm ~  Tg + Cindex +  M + Deficit + Surplus + pAET, data = selectBiome,weights=selectBiome$wt, method="class", control = list(maxdepth = 5, cp=0.0005, minsplit=1000))
 # Make plot
 
 png(filename="biomeclass.png",width = 10, height = 3, units = 'in', res = 600)

@@ -13,7 +13,7 @@ library(plyr)
 
 fluidPage(
   
-  headerPanel('Climate Graphs - solar radiation based'),
+  headerPanel('Biome Climate Browser'),
   sidebarPanel(
     htmlOutput("Biome"),
     htmlOutput("ECO_NAME"),
@@ -56,9 +56,10 @@ fluidPage(
                                            HTML("Winter × pAET"),
                                            HTML("Moisture × Deficit"),
                                            HTML("Moisture × Seasonality"),
-                                           HTML("Map</font>")),
+                                           HTML("Map"),
+                        HTML("Temperature × Elevation</font>")),
                         
-                        choiceValues = list(1,2,4,5,6,7,8,3,9),
+                        choiceValues = list(1,2,4,5,6,7,8,3,9,10),
                         selected = 1),
            HTML("</font>")
     )),
