@@ -169,11 +169,13 @@ shinyServer(function(input, output, session) {
     selecty <- mean(selectClim$Latitude)
     selectx <- mean(selectClim$Longitude)
     selectz <- mean(selectClim$Elevation)
+    selectNorm <- selectClim$Norm[1]
     selectClim2 <- subset(Biomeclimate,
                           Latitude >= selecty - 5 &
                             Latitude <= selecty + 5 &
                             Longitude >= selectx - 7 &
-                            Longitude <= selectx + 7
+                            Longitude <= selectx + 7 &
+                            Norm == selectNorm
     )
     selectClim2$wts <- 0.1/(((selectClim2$Latitude - selecty)^2 + (selectClim2$Longitude - selectx)^2)^0.5+5)#give less weight for more distant points.
     selectClim$wts <- 1 #Full weight for primary internal data.
@@ -208,6 +210,24 @@ shinyServer(function(input, output, session) {
     
     selectClim$PPETRatio <- selectClim$P/(selectClim$Deficit + selectClim$P - selectClim$Surplus +0.0001)
     selectClim$Mindex <- selectClim$PPETRatio/(selectClim$PPETRatio+1)
+       graphymax = input$lat[2]#max(selectClim$Latitude)+10# 
+    graphymin = input$lat[1]#min(selectClim$Latitude)-10# 
+    graphxmax = input$lon[2]#max(selectClim$Longitude)+10# 
+    graphxmin = input$lon[1]#min(selectClim$Longitude)-10# 
+    
+    selectClim$SP1 <- round(ifelse(selectClim$PPETRatio < 0.5 & selectClim$Surplus < 25 & selectClim$pAET < 75, pmax(selectClim$Surplus/25, selectClim$pAET/75)  ,1),15)
+    selectClim$SP2 <- round(ifelse(selectClim$SP1 >= 1, ifelse(selectClim$pAET < 75 & (selectClim$Deficit >= 150 | selectClim$PPETRatio < 1), pmax(selectClim$pAET/75, 150/(selectClim$Deficit+150)),1),0),15)
+    selectClim$SP3 <- round(ifelse(selectClim$SP2 >= 1, ifelse(selectClim$Deficit >= 150 | selectClim$PPETRatio < 1, pmax(150/(selectClim$Deficit+150)),1),0),15)
+    selectClim$SP4 <- round(ifelse(selectClim$SP3 >= 1, pmin(1-selectClim$Deficit/150),0),15)
+    selectClim$SPindex <- selectClim$SP1 + selectClim$SP2 + selectClim$SP3 + selectClim$SP4 + 1 #Seasonal precipitation index
+    selectClim$Cindex <- pmin(selectClim$Tclx+15, selectClim$Tc) #Cold index
+    selectClim$Dindex <- selectClim$Deficit/(selectClim$Deficit + 100)
+    selectClim$Sindex <- selectClim$Surplus/(selectClim$Surplus + 100)
+    selectClim$Aindex <- selectClim$pAET/(selectClim$pAET + 100)
+    #Swap out the external data to a seperate data frame and retain internal data for all but elevation graph.
+    selectClim2<- selectClim
+    selectClim <- selectClim[selectClim$wts >=1,]
+    
     T <- apply(selectClim[,c('t01', 't02', 't03', 't04', 't05', 't06', 't07', 't08', 't09', 't10', 't11', 't12')], MARGIN=c(2), na.rm=TRUE, FUN='mean')
     E <- apply(selectClim[,c('e01', 'e02', 'e03', 'e04', 'e05', 'e06', 'e07', 'e08', 'e09', 'e10', 'e11', 'e12')], MARGIN=c(2), na.rm=TRUE, FUN='mean')
     P <- apply(selectClim[,c('p01', 'p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11', 'p12')], MARGIN=c(2), na.rm=TRUE, FUN='mean')
@@ -232,23 +252,7 @@ shinyServer(function(input, output, session) {
     Tc<-mean(selectClim$Tc, na.rm=TRUE)
     Tcl<-mean(selectClim$Tcl, na.rm=TRUE)
     Tclx <- mean(selectClim$Tclx, na.rm=TRUE)
-    graphymax = input$lat[2]#max(selectClim$Latitude)+10# 
-    graphymin = input$lat[1]#min(selectClim$Latitude)-10# 
-    graphxmax = input$lon[2]#max(selectClim$Longitude)+10# 
-    graphxmin = input$lon[1]#min(selectClim$Longitude)-10# 
     
-    selectClim$SP1 <- round(ifelse(selectClim$PPETRatio < 0.5 & selectClim$Surplus < 25 & selectClim$pAET < 75, pmax(selectClim$Surplus/25, selectClim$pAET/75)  ,1),15)
-    selectClim$SP2 <- round(ifelse(selectClim$SP1 >= 1, ifelse(selectClim$pAET < 75 & (selectClim$Deficit >= 150 | selectClim$PPETRatio < 1), pmax(selectClim$pAET/75, 150/(selectClim$Deficit+150)),1),0),15)
-    selectClim$SP3 <- round(ifelse(selectClim$SP2 >= 1, ifelse(selectClim$Deficit >= 150 | selectClim$PPETRatio < 1, pmax(150/(selectClim$Deficit+150)),1),0),15)
-    selectClim$SP4 <- round(ifelse(selectClim$SP3 >= 1, pmin(1-selectClim$Deficit/150),0),15)
-    selectClim$SPindex <- selectClim$SP1 + selectClim$SP2 + selectClim$SP3 + selectClim$SP4 + 1 #Seasonal precipitation index
-    selectClim$Cindex <- pmin(selectClim$Tclx+15, selectClim$Tc) #Cold index
-    selectClim$Dindex <- selectClim$Deficit/(selectClim$Deficit + 100)
-    selectClim$Sindex <- selectClim$Surplus/(selectClim$Surplus + 100)
-    selectClim$Aindex <- selectClim$pAET/(selectClim$pAET + 100)
-    #Swap out the external data to a seperate data frame and retain internal data for all but elevation graph.
-    selectClim2<- selectClim
-    selectClim <- selectClim[selectClim$wts >=1,]
     #Key to climate type_____________________________________________________
     
     
