@@ -5,9 +5,9 @@ account: phytoclast
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 719566
-bundleId: 1882596
+bundleId: 1884948
 url: https://phytoclast.shinyapps.io/BioClimR/
-when: 1550505468.56245
+when: 1550597178.79233
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .gitattributes|biomeclass.png|misc.R
