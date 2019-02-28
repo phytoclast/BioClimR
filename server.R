@@ -203,8 +203,8 @@ shinyServer(function(input, output, session) {
     }
     rm(selectMonthlyA)
     sumMonthly <- ddply(selectMonthly, "Month", summarise,
-                        t25 = quantile(t, 0.25), t75 = quantile(t, 0.75), t = mean(t),
-                        p25 = quantile(p, 0.25), p75 = quantile(p, 0.75), p = mean(p), 
+                        t25 = quantile(t, 0.10), t75 = quantile(t, 0.90), t = mean(t),
+                        p25 = quantile(p, 0.10), p75 = quantile(p, 0.90), p = mean(p), 
                         e = mean(e), tl = mean(tl), th = mean(th))
     
     
