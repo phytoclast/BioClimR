@@ -215,7 +215,7 @@ shinyServer(function(input, output, session) {
     graphxmax = input$lon[2]#max(selectClim$Longitude)+10# 
     graphxmin = input$lon[1]#min(selectClim$Longitude)-10# 
     
-    selectClim$SP1 <- round(ifelse(selectClim$PPETRatio < 0.5 & selectClim$Surplus < 25 & selectClim$pAET < 75, pmax(selectClim$Surplus/25, selectClim$pAET/75)  ,1),15)
+    selectClim$SP1 <- round(ifelse(selectClim$PPETRatio < 0.5 & selectClim$Surplus < 25 , pmax(selectClim$Surplus/25)  ,1),15)
     selectClim$SP2 <- round(ifelse(selectClim$SP1 >= 1, ifelse(selectClim$pAET < 75 & (selectClim$Deficit >= 150 | selectClim$PPETRatio < 1), pmax(selectClim$pAET/75, 150/(selectClim$Deficit+150)),1),0),15)
     selectClim$SP3 <- round(ifelse(selectClim$SP2 >= 1, ifelse(selectClim$Deficit >= 150 | selectClim$PPETRatio < 1, pmax(150/(selectClim$Deficit+150)),1),0),15)
     selectClim$SP4 <- round(ifelse(selectClim$SP3 >= 1, pmin(1-selectClim$Deficit/150),0),15)
@@ -257,7 +257,7 @@ shinyServer(function(input, output, session) {
     
     
     Seasonalilty <- ifelse(Deficit < 150 & PPETRatio>=1, "Isopluvial",
-                           ifelse(Surplus < 25 & PPETRatio < 0.5 & peakAET < 75, "Isoxeric",
+                           ifelse(Surplus < 25 & PPETRatio < 0.5, ifelse(peakAET < 75, "Isoxeric","Pluvioxeric"),
                                   ifelse(peakAET < 75,"Xerothermic","Pluviothermic")))
     
     
