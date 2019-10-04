@@ -71,7 +71,35 @@ Biomeclimate$BioTemperatureW <- ifelse(Biomeclimate$Tg >= 24,"Hot (Lowland)",
 
 Biomeclimate$summer <- pmax(apply(Biomeclimate[,c('t01','t02','t12')], MARGIN = 1, FUN = 'mean'),apply(Biomeclimate[,c('t06','t07','t08')], MARGIN = 1, FUN = 'mean'))
 Biomeclimate$winter <- pmin(apply(Biomeclimate[,c('t01','t02','t12')], MARGIN = 1, FUN = 'mean'),apply(Biomeclimate[,c('t06','t07','t08')], MARGIN = 1, FUN = 'mean'))
+Biomeclimate$countten1 <-
+  (Biomeclimate$t01 >= 9.9)+
+    (Biomeclimate$t02 >= 9.9)+
+    (Biomeclimate$t03 >= 9.9)+
+    (Biomeclimate$t04 >= 9.9)+
+    (Biomeclimate$t05 >= 9.9)+
+    (Biomeclimate$t06 >= 9.9)+
+    (Biomeclimate$t07 >= 9.9)+
+    (Biomeclimate$t08 >= 9.9)+
+    (Biomeclimate$t09 >= 9.9)+
+    (Biomeclimate$t10 >= 9.9)+
+    (Biomeclimate$t11 >= 9.9)+
+    (Biomeclimate$t12 >= 9.9)
+Biomeclimate$countten2 <-  
+  (Biomeclimate$t01 >= 10.1)+
+  (Biomeclimate$t02 >= 10.1)+
+  (Biomeclimate$t03 >= 10.1)+
+  (Biomeclimate$t04 >= 10.1)+
+  (Biomeclimate$t05 >= 10.1)+
+  (Biomeclimate$t06 >= 10.1)+
+  (Biomeclimate$t07 >= 10.1)+
+  (Biomeclimate$t08 >= 10.1)+
+  (Biomeclimate$t09 >= 10.1)+
+  (Biomeclimate$t10 >= 10.1)+
+  (Biomeclimate$t11 >= 10.1)+
+  (Biomeclimate$t12 >= 10.1)
 
+  
+  
 cryic <- subset(Biomeclimate, MAAT <= 7 & MAAT >= -1 & summer <= 16.2 & summer >= 15.8)
 frigidmesic <- subset(Biomeclimate, MAAT >= 6.8 & MAAT <= 7.2 )
 mesicthermic <- subset(Biomeclimate, MAAT >= 14.8 & MAAT <= 15.2)
@@ -79,12 +107,23 @@ thermichypertherm <- subset(Biomeclimate, MAAT >= 20.8 & MAAT <= 21.2)
 iso <- subset(Biomeclimate, summer - winter > 6.8 & summer - winter < 7.2)
 gelic <- subset(Biomeclimate, MAAT >= -1.2 & MAAT <= -0.8)
 
+arcticboreal <- subset(Biomeclimate, countten1 >=1 & countten2 <1)
+boreotemperate <- subset(Biomeclimate, countten1 >=4 & countten2 <4)
+temperatesubtropical <- subset(Biomeclimate, countten1 >=8 & countten2 <8)
+temperatewarm <- subset(Biomeclimate, Tw >=21.9 & Tw <22.1)
+subtropictropical <- subset(Biomeclimate, Tc >=17.8 & Tc <18.2)
+
 ggplot()+
   geom_smooth(cryic, mapping = aes(x=Cindex, y= Tg))+
   geom_smooth(frigidmesic, mapping = aes(x=Cindex, y= Tg))+
   geom_smooth(mesicthermic, mapping = aes(x=Cindex, y= Tg))+
   geom_smooth(thermichypertherm, mapping = aes(x=Cindex, y= Tg))+
-  geom_smooth(iso, mapping = aes(x=Cindex, y= Tg))
+  geom_smooth(iso, mapping = aes(x=Cindex, y= Tg))+
+  geom_smooth(arcticboreal, mapping = aes(x=Cindex, y= Tg))+
+  geom_smooth(boreotemperate, mapping = aes(x=Cindex, y= Tg))+
+  geom_smooth(temperatesubtropical, mapping = aes(x=Cindex, y= Tg))+
+  geom_smooth(temperatewarm, mapping = aes(x=Cindex, y= Tg))+
+  geom_smooth(subtropictropical, mapping = aes(x=Cindex, y= Tg))
 
 a1=data.frame(x=c(-50,-50,0,0), y=c(0,6,6,0))
 a2=data.frame(x=c(-50,-50,0,0), y=c(6,12,12,6))
@@ -128,24 +167,24 @@ climplot2 <-  ggplot() +
   geom_smooth(mesicthermic, mapping = aes(x=Cindex, y= Tg, color = 'mesic-thermic'))+
   geom_smooth(thermichypertherm, mapping = aes(x=Cindex, y= Tg, color = 'thermic-hyperthermic'))+
   geom_smooth(iso, mapping = aes(x=Cindex, y= Tg, color = 'iso'))+
-
+  
   scale_fill_manual("Air", values = c("alpine" = "pink",
-                                         "boreal" = "darkgreen",
-                                         "temperate" = "greenyellow",
-                                         "andean" = "lightblue",
-                                         "oceanic" = "darkcyan",
-                                         "subtropical" = "orange",
-                                         "tropical" = "darkred"
-                                         
+                                      "boreal" = "darkgreen",
+                                      "temperate" = "greenyellow",
+                                      "andean" = "lightblue",
+                                      "oceanic" = "darkcyan",
+                                      "subtropical" = "orange",
+                                      "tropical" = "darkred"
+                                      
   ))+ 
   scale_color_manual("Soil", values = c("iso" = "yellow",
-                                             "frigid-mesic" = "green",
-                                         
+                                        "frigid-mesic" = "green",
+                                        
                                         "gelic-cryic" = "cyan",
-                                             "cryic-frigid" = "blue",
-                                             "mesic-thermic" = "orange",
-                                             "thermic-hyperthermic" = "darkred"
-                                             
+                                        "cryic-frigid" = "blue",
+                                        "mesic-thermic" = "orange",
+                                        "thermic-hyperthermic" = "darkred"
+                                        
   ))+
   scale_x_continuous(name= "Coldest Month (Annual Extreme Minimum)", 
                      breaks=c(-45,-40, -35, -30, -25, -20,-15, -10,-5, 0,5, 10,15, 20,25,30),
@@ -159,7 +198,62 @@ climplot2 <-  ggplot() +
         panel.grid.major = element_line(), panel.grid.minor = element_blank())
 
 
+climplot2
 
+climplot3 <-  ggplot() +
+  geom_polygon(data=a1, mapping=aes(x=x, y=y, fill='alpine'),alpha = 0.5)+
+  geom_polygon(data=a2, mapping=aes(x=x, y=y, fill='boreal'),alpha = 0.5)+
+  geom_polygon(data=a3, mapping=aes(x=x, y=y, fill='temperate'),alpha = 0.5)+
+  geom_polygon(data=a4, mapping=aes(x=x, y=y, fill='andean'),alpha = 0.5)+
+  geom_polygon(data=a5, mapping=aes(x=x, y=y, fill='oceanic'),alpha = 0.5)+
+  geom_polygon(data=a6, mapping=aes(x=x, y=y, fill='subtropical'),alpha = 0.5)+
+  geom_polygon(data=a7, mapping=aes(x=x, y=y, fill='tropical'),alpha = 0.5)+
+  
+  geom_line(data=ll1, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=ll2, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=ll3, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l1, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l2, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l3, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l4, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l5, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_line(data=l6, mapping=aes(x=x, y=y),alpha = 0.3, color='black', linetype='solid')+
+  geom_smooth(arcticboreal, mapping = aes(x=Cindex, y= Tg, color = '1 month >= 10'))+
+  geom_smooth(boreotemperate, mapping = aes(x=Cindex, y= Tg, color = '4 months >= 10'))+
+  geom_smooth(temperatesubtropical, mapping = aes(x=Cindex, y= Tg, color = '8 months >= 10'))+
+  geom_smooth(temperatewarm, mapping = aes(x=Cindex, y= Tg, color = '1 month >= 22'))+
+  geom_smooth(subtropictropical, mapping = aes(x=Cindex, y= Tg, color = '12 months >= 18'),  method = "lm")+
+
+  
+  scale_fill_manual("Air", values = c("alpine" = "pink",
+                                      "boreal" = "darkgreen",
+                                      "temperate" = "greenyellow",
+                                      "andean" = "lightblue",
+                                      "oceanic" = "darkcyan",
+                                      "subtropical" = "orange",
+                                      "tropical" = "darkred"
+                                      
+  ))+ 
+  scale_color_manual("Koppen", values = c("1 month >= 22" = "green",
+                                        "1 month >= 10" = "cyan",
+                                        "4 months >= 10" = "blue",
+                                        "8 months >= 10" = "orange",
+                                        "12 months >= 18" = "darkred"
+                                        
+  ))+
+  scale_x_continuous(name= "Coldest Month (Annual Extreme Minimum)", 
+                     breaks=c(-45,-40, -35, -30, -25, -20,-15, -10,-5, 0,5, 10,15, 20,25,30),
+                     labels=c('-45 (-60)','-40 (-55)', '-35 (-50)','-30 (-45)', '-25 (-40)','-20 (-35)','-15 (-30)','-10 (-25)',
+                              '-5 (-20)','0 (-15)','5 (-10)','10 (-5)','15 (0)','20 (5)','25 (10)','30 (15)'))+
+  scale_y_continuous(name= "Growing Season Temperature", breaks=c(0,6,12,18,24,30))+
+  coord_fixed(ratio = 1/1,xlim = c(-45,30), ylim = c(0, 33))+
+  labs(title = paste("Temperature Regimes", sep=""))+
+  theme_bw()+
+  theme(legend.position='right',axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0),
+        panel.grid.major = element_line(), panel.grid.minor = element_blank())
+
+
+climplot3
 
 
 
