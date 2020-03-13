@@ -68,7 +68,7 @@ fluidPage(
                  Mid Holocene: ~6000 years ago (model: CCSM4);<br> Current: ~1961-1990 (WorldClim 1.4, http://worldclim.org/);<br>
                  Moderate global warming: at year 2070 (scenario = RCP 4.5, model = CCSM4);<br>
 Stronger global warming: at year 2070 (scenario = RCP 8.5, model = CCSM4)
-                       <br>Temperature and preciptation error bars coorespond to the 10th and 90th percentiles of the geographic variability of the climate averages. More information about the 
+                       <br>Temperature and preciptation error bars coorespond to the 10th and 90th percentiles of the geographic variability of the climate averages. NPP was estimated to be between 0.8 to 1.2 kg per square meter per AET depending on vegetation type or fertility, and AET was assumed to track monthly values for dry sites (high slope position, low soil water holding capacity), and annual totals for moist sites (low slope position, high soil water holding capacity).  More information about the 
                       "),
                   tags$a(href="https://www.researchgate.net/publication/327537609_Climate_Classification_Outline", "climate classification"),
                   HTML(" used above.</font>")
